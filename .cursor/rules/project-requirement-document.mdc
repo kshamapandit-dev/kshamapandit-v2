@@ -1,0 +1,10 @@
+---
+description: Document that helps you follow instructions to build this application requirements from time to time
+globs: 
+---
+- Do not modify this [.env](mdc:.env) file until or unless I ask to do so.
+- I have preinstalled all the shadcn components in this project. So do not ever provide or force commands to install shadcn components again.
+- We are building a woocommerce headless frontend in this project for women fashion.
+- We use the woocommerce v3 REST API to communicate with the backend.
+- Custom common components should always be created under "components > common"
+- Do not over complicate the design structure and shadcn components.
