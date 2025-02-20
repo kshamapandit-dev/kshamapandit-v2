@@ -8,3 +8,6 @@ globs:
 - We use the woocommerce v3 REST API to communicate with the backend.
 - Custom common components should always be created under "components > common"
 - Do not over complicate the design structure and shadcn components.
+
+Pages:
+- pages should always be created under next default folder "app > pages > <page-name>"

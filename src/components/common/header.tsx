@@ -5,6 +5,12 @@ import Image from "next/image"
 import { Search, ShoppingCart, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/cart-context"
+import { MiniCart } from "@/components/common/mini-cart"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export function Header() {
   const { cartCount } = useCart()
@@ -46,18 +52,29 @@ export function Header() {
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative border border-border/40 hover:border-border/80"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
-                {cartCount}
-              </span>
-            )}
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative border border-border/40 hover:border-border/80"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-80 p-0 shadow-lg" 
+              align="end"
+              sideOffset={8}
+            >
+              <MiniCart />
+            </PopoverContent>
+          </Popover>
           <Button variant="ghost" size="icon">
             <User className="h-5 w-5" />
           </Button>
