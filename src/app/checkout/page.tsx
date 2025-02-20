@@ -11,6 +11,7 @@ import { Header } from "@/components/common/header"
 import { formatPrice } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import Image from "next/image"
+import { Check, Wallet, BanknoteIcon } from "lucide-react"
 
 export default function CheckoutPage() {
   const { items = [], total = 0 } = useCart()
@@ -136,15 +137,34 @@ export default function CheckoutPage() {
               <RadioGroup
                 value={paymentMethod}
                 onValueChange={setPaymentMethod}
-                className="space-y-2"
+                className="grid grid-cols-2 gap-3"
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cod" id="cod" />
-                  <Label htmlFor="cod" className="text-sm">Cash on Delivery</Label>
+                <div>
+                  <RadioGroupItem value="cod" id="cod" className="peer sr-only" />
+                  <Label
+                    htmlFor="cod"
+                    className="flex flex-col items-center justify-center h-24 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative"
+                  >
+                    <Wallet className="h-6 w-6 mb-2" />
+                    <div className="text-sm font-medium">Cash on Delivery</div>
+                    <div className="absolute top-2 right-2 opacity-0 peer-data-[state=checked]:opacity-100">
+                      <Check className="h-4 w-4" />
+                    </div>
+                  </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="bank" id="bank" />
-                  <Label htmlFor="bank" className="text-sm">Direct Bank Transfer</Label>
+
+                <div>
+                  <RadioGroupItem value="bank" id="bank" className="peer sr-only" />
+                  <Label
+                    htmlFor="bank"
+                    className="flex flex-col items-center justify-center h-24 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative"
+                  >
+                    <BanknoteIcon className="h-6 w-6 mb-2" />
+                    <div className="text-sm font-medium">Bank Transfer</div>
+                    <div className="absolute top-2 right-2 opacity-0 peer-data-[state=checked]:opacity-100">
+                      <Check className="h-4 w-4" />
+                    </div>
+                  </Label>
                 </div>
               </RadioGroup>
             </div>
