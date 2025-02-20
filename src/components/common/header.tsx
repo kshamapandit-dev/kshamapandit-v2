@@ -4,8 +4,11 @@ import Link from "next/link"
 import Image from "next/image"
 import { Search, ShoppingCart, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useCart } from "@/context/cart-context"
 
 export function Header() {
+  const { cartCount } = useCart()
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="container mx-auto grid grid-cols-3 items-center h-16">
@@ -43,11 +46,17 @@ export function Header() {
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative border border-border/40 hover:border-border/80"
+          >
             <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-xs text-primary-foreground flex items-center justify-center">
-              0
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
+                {cartCount}
+              </span>
+            )}
           </Button>
           <Button variant="ghost" size="icon">
             <User className="h-5 w-5" />

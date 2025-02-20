@@ -13,6 +13,9 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils"
+import { Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useCart } from "@/context/cart-context"
 
 const AUTOPLAY_INTERVAL = 3000
 
@@ -29,6 +32,7 @@ export function FeaturedProducts() {
   const [count, setCount] = React.useState(0)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const { addToCart } = useCart()
 
   useEffect(() => {
     if (!api) return
@@ -117,11 +121,20 @@ export function FeaturedProducts() {
                         }}
                       />
                     </div>
-                    <div className="p-4">
+                    <div className="p-4 relative">
                       <h3 className="font-medium truncate">{product.name}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         {product.price}
                       </p>
+                      <Button 
+                        size="icon" 
+                        className="rounded-full absolute bottom-4 right-4 h-8 w-8"
+                        variant="secondary"
+                        onClick={() => addToCart(product)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="sr-only">Add to cart</span>
+                      </Button>
                     </div>
                   </Card>
                 </CarouselItem>
