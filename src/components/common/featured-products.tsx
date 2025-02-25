@@ -61,7 +61,7 @@ export function FeaturedProducts() {
     const fetchProducts = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_WOO_COMMERCE_URL}/wp-json/wc/v3/products?featured=true&consumer_key=${process.env.NEXT_PUBLIC_WOO_COMMERCE_CONSUMER_KEY}&consumer_secret=${process.env.NEXT_PUBLIC_WOO_COMMERCE_CONSUMER_SECRET}`
+          `${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/wc/v3/products?featured=true&consumer_key=${process.env.NEXT_PUBLIC_WC_CONSUMER_KEY}&consumer_secret=${process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET}`
         )
         const data = await response.json()
         setProducts(data)
