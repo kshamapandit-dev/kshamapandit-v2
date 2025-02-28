@@ -1,8 +1,16 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { graphqlClient } from '@/lib/graphql-client';
+import { 
+  CART_QUERY, 
+  ADD_TO_CART_MUTATION, 
+  UPDATE_CART_ITEM_MUTATION, 
+  REMOVE_CART_ITEM_MUTATION 
+} from '@/lib/graphql/queries';
 
 interface CartItem {
+  key: string;
   id: number;
   name: string;
   price: number;
@@ -13,94 +21,131 @@ interface CartItem {
 interface CartContextType {
   items: CartItem[];
   total: number;
-  addToCart: (product: { id: number; name: string; price: string; images: { src: string }[] }) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  removeFromCart: (id: number) => void;
+  addToCart: (product: { id: number; name: string; price: string; images: { src: string }[] }) => Promise<void>;
+  updateQuantity: (key: string, quantity: number) => Promise<void>;
+  removeFromCart: (key: string) => Promise<void>;
   cartCount: number;
+  isLoading: boolean;
 }
 
-const CART_STORAGE_KEY = 'kp-cart-items';
+interface CartResponse {
+  cart: {
+    contents: {
+      nodes: Array<{
+        key: string;
+        product: {
+          node: {
+            id: string;
+            databaseId: number;
+            name: string;
+            price: string;
+            image?: {
+              sourceUrl: string;
+              altText: string;
+            };
+          };
+        };
+        quantity: number;
+        total: string;
+      }>;
+    };
+    total: string;
+    subtotal: string;
+    shippingTotal: string;
+    discountTotal: string;
+  };
+}
 
 // Create context with default values
 const CartContext = createContext<CartContextType>({
   items: [],
   total: 0,
-  addToCart: () => {},
-  updateQuantity: () => {},
-  removeFromCart: () => {},
-  cartCount: 0
+  addToCart: async () => {},
+  updateQuantity: async () => {},
+  removeFromCart: async () => {},
+  cartCount: 0,
+  isLoading: false
 });
-
-function getStoredCart(): CartItem[] {
-  if (typeof window === 'undefined') return [];
-  
-  try {
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-    return storedCart ? JSON.parse(storedCart) : [];
-  } catch (error) {
-    console.error('Error reading cart from localStorage:', error);
-    return [];
-  }
-}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize cart from localStorage
-  useEffect(() => {
-    const storedCart = getStoredCart();
-    setCartItems(storedCart);
-    setIsInitialized(true);
-  }, []);
-
-  // Update localStorage whenever cart changes
-  useEffect(() => {
-    if (!isInitialized) return;
-    
+  // Fetch cart data
+  const fetchCart = async () => {
     try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+      const { cart } = await graphqlClient.request<CartResponse>(CART_QUERY);
+      const items = cart.contents.nodes.map((node) => ({
+        key: node.key,
+        id: node.product.node.databaseId,
+        name: node.product.node.name,
+        price: parseFloat(node.product.node.price),
+        quantity: node.quantity,
+        image: node.product.node.image?.sourceUrl || "/placeholder.png"
+      }));
+      setCartItems(items);
     } catch (error) {
-      console.error('Error saving cart to localStorage:', error);
+      console.error('Error fetching cart:', error);
     }
-  }, [cartItems, isInitialized]);
+  };
+
+  // Initialize cart
+  useEffect(() => {
+    fetchCart();
+  }, []);
 
   // Calculate total whenever cartItems changes
   const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
-  const addToCart = (product: { id: number; name: string; price: string; images: { src: string }[] }) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      
-      if (existingItem) {
-        return prevItems.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-
-      return [...prevItems, {
-        id: product.id,
-        name: product.name,
-        price: parseFloat(product.price),
-        image: product.images[0]?.src || "/placeholder.png",
-        quantity: 1
-      }];
-    });
+  const addToCart = async (product: { id: number; name: string; price: string; images: { src: string }[] }) => {
+    setIsLoading(true);
+    try {
+      await graphqlClient.request(ADD_TO_CART_MUTATION, {
+        input: {
+          productId: product.id,
+          quantity: 1
+        }
+      });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item
-      )
-    );
+  const updateQuantity = async (key: string, quantity: number) => {
+    setIsLoading(true);
+    try {
+      await graphqlClient.request(UPDATE_CART_ITEM_MUTATION, {
+        input: {
+          key,
+          quantity: Math.max(1, quantity)
+        }
+      });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error updating cart quantity:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeFromCart = (id: number) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+  const removeFromCart = async (key: string) => {
+    setIsLoading(true);
+    try {
+      await graphqlClient.request(REMOVE_CART_ITEM_MUTATION, {
+        input: {
+          key
+        }
+      });
+      await fetchCart();
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -110,7 +155,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart, 
       updateQuantity, 
       removeFromCart, 
-      cartCount 
+      cartCount,
+      isLoading
     }}>
       {children}
     </CartContext.Provider>

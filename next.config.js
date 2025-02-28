@@ -12,7 +12,29 @@ const nextConfig = {
   },
   images: {
     domains: ['kp.local'],
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'kp.local',
+        pathname: '/wp-content/uploads/**',
+      },
+    ],
+  },
+  // Add support for self-signed certificates
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.experiments = {
+        ...config.experiments,
+        topLevelAwait: true,
+      }
+    }
+    return config
   },
 }
+
+// Configure Node.js to accept self-signed certificates
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 module.exports = nextConfig 

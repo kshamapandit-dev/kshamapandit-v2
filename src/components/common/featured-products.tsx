@@ -16,11 +16,29 @@ import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/cart-context"
-import { wooApi } from "@/lib/woocommerce"
+import { graphqlClient } from "@/lib/graphql-client"
+import { FEATURED_PRODUCTS_QUERY } from "@/lib/graphql/queries"
 
 const AUTOPLAY_INTERVAL = 3000
 
 type Product = {
+  id: string
+  databaseId: number
+  name: string
+  price: string
+  image: {
+    sourceUrl: string
+    altText: string
+  }
+}
+
+type GraphQLResponse = {
+  products: {
+    nodes: Product[]
+  }
+}
+
+type CartProduct = {
   id: number
   name: string
   price: string
@@ -33,6 +51,7 @@ export function FeaturedProducts() {
   const [count, setCount] = React.useState(0)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { addToCart } = useCart()
 
   useEffect(() => {
@@ -57,14 +76,21 @@ export function FeaturedProducts() {
     return () => clearInterval(timer)
   }, [api])
 
-  // Fetch featured products
+  // Fetch featured products using GraphQL
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await wooApi.getProducts({ featured: true })
-        setProducts(data)
+        setLoading(true)
+        setError(null)
+        const data = await graphqlClient.request<GraphQLResponse>(FEATURED_PRODUCTS_QUERY)
+        if (!data?.products?.nodes) {
+          throw new Error('No products found')
+        }
+        setProducts(data.products.nodes)
       } catch (error) {
         console.error("Error fetching featured products:", error)
+        setError(error instanceof Error ? error.message : 'Failed to fetch products')
+        setProducts([])
       } finally {
         setLoading(false)
       }
@@ -74,8 +100,48 @@ export function FeaturedProducts() {
   }, [])
 
   if (loading) {
-    return <div className="container py-8">Loading...</div>
+    return (
+      <div className="container py-8">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
   }
+
+  if (error) {
+    return (
+      <div className="container py-8">
+        <div className="text-center text-red-500">
+          <p>Error: {error}</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="container py-8">
+        <div className="text-center text-muted-foreground">
+          <p>No featured products available at the moment.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const convertToCartProduct = (product: Product): CartProduct => ({
+    id: product.databaseId,
+    name: product.name,
+    price: product.price,
+    images: [{ src: product.image?.sourceUrl || "/placeholder.png" }]
+  })
 
   return (
     <section className="py-12">
@@ -108,8 +174,8 @@ export function FeaturedProducts() {
                   <Card className="overflow-hidden shadow-none">
                     <div className="relative aspect-[4/5] bg-muted">
                       <Image
-                        src={product.images[0]?.src || "/placeholder.png"}
-                        alt={product.name}
+                        src={product.image?.sourceUrl || "/placeholder.png"}
+                        alt={product.image?.altText || product.name}
                         fill
                         className="object-cover transition-all hover:scale-105"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
@@ -128,7 +194,7 @@ export function FeaturedProducts() {
                         size="icon" 
                         className="rounded-full absolute bottom-4 right-4 h-8 w-8"
                         variant="secondary"
-                        onClick={() => addToCart(product)}
+                        onClick={() => addToCart(convertToCartProduct(product))}
                       >
                         <Plus className="h-4 w-4" />
                         <span className="sr-only">Add to cart</span>
