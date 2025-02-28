@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/cart-context"
+import { wooApi } from "@/lib/woocommerce"
 
 const AUTOPLAY_INTERVAL = 3000
 
@@ -60,10 +61,7 @@ export function FeaturedProducts() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/wc/v3/products?featured=true&consumer_key=${process.env.NEXT_PUBLIC_WC_CONSUMER_KEY}&consumer_secret=${process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET}`
-        )
-        const data = await response.json()
+        const data = await wooApi.getProducts({ featured: true })
         setProducts(data)
       } catch (error) {
         console.error("Error fetching featured products:", error)

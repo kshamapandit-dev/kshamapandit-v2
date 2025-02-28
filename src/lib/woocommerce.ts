@@ -1,6 +1,15 @@
 import axios from 'axios'
 
-type WooCommerceParams = Record<string, any>
+type WooCommerceParams = {
+  featured?: boolean
+  search?: string
+  category?: string
+  page?: number
+  per_page?: number
+  order?: 'asc' | 'desc'
+  orderby?: 'date' | 'id' | 'title' | 'slug' | 'price' | 'popularity' | 'rating'
+  [key: string]: boolean | string | number | undefined // more specific index signature
+}
 
 class WooCommerceAPI {
   private baseUrl: string
@@ -9,7 +18,8 @@ class WooCommerceAPI {
   private version: string
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_WOO_COMMERCE_URL!
+    // Remove any trailing slashes and ensure we're using http for local development
+    this.baseUrl = process.env.NEXT_PUBLIC_WOO_COMMERCE_URL!.replace(/\/$/, '').replace(/^https:/, 'http:')
     this.consumerKey = process.env.NEXT_PUBLIC_WOO_COMMERCE_CONSUMER_KEY!
     this.consumerSecret = process.env.NEXT_PUBLIC_WOO_COMMERCE_CONSUMER_SECRET!
     this.version = process.env.NEXT_PUBLIC_WOO_COMMERCE_API_VERSION || "v3"
@@ -30,10 +40,8 @@ class WooCommerceAPI {
       })
       return response.data
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(`WooCommerce API error: ${error.response?.data?.message || error.message}`)
-      }
-      throw error
+      console.error('WooCommerce API Error:', error)
+      throw new Error('Failed to fetch from WooCommerce API')
     }
   }
 
