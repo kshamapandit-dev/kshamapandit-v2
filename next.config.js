@@ -11,7 +11,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['woo-demo.playhq.in'],
+    domains: ['kp.local'],
   },
 }
 
